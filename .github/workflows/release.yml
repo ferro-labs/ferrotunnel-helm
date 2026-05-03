@@ -1,0 +1,47 @@
+name: Release Charts
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
+        with:
+          skip_existing: true
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Copy Artifact Hub repo metadata to gh-pages
+        run: |
+          source_sha="$GITHUB_SHA"
+          git fetch origin gh-pages || true
+          git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
+          git show "$source_sha:artifacthub-repo.yml" > artifacthub-repo.yml
+          git add artifacthub-repo.yml
+          git diff --cached --quiet || git commit -m "chore: update artifacthub-repo.yml"
+          git push origin gh-pages
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

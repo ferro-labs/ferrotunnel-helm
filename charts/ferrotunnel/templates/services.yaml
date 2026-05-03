@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ferrotunnel.fullname" . }}-control
+  labels:
+    {{- include "ferrotunnel.labels" . | nindent 4 }}
+    app.kubernetes.io/component: control
+  {{- if or .Values.commonAnnotations .Values.service.control.annotations }}
+  annotations:
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.service.control.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.control.type }}
+  {{- include "ferrotunnel.serviceSpecFields" .Values.service.control | nindent 2 }}
+  ports:
+    - port: {{ .Values.service.control.port }}
+      targetPort: control
+      protocol: TCP
+      name: control
+      {{- include "ferrotunnel.servicePortFields" .Values.service.control | nindent 6 }}
+  selector:
+    {{- include "ferrotunnel.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ferrotunnel.fullname" . }}-http
+  labels:
+    {{- include "ferrotunnel.labels" . | nindent 4 }}
+    app.kubernetes.io/component: http
+  {{- if or .Values.commonAnnotations .Values.service.http.annotations }}
+  annotations:
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.service.http.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.http.type }}
+  {{- include "ferrotunnel.serviceSpecFields" .Values.service.http | nindent 2 }}
+  ports:
+    - port: {{ .Values.service.http.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+      {{- include "ferrotunnel.servicePortFields" .Values.service.http | nindent 6 }}
+  selector:
+    {{- include "ferrotunnel.selectorLabels" . | nindent 4 }}
+{{- if .Values.server.metrics }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ferrotunnel.fullname" . }}-metrics
+  labels:
+    {{- include "ferrotunnel.labels" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+  {{- if or .Values.commonAnnotations .Values.service.metrics.annotations }}
+  annotations:
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.service.metrics.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.metrics.type }}
+  {{- include "ferrotunnel.serviceSpecFields" .Values.service.metrics | nindent 2 }}
+  ports:
+    - port: {{ .Values.service.metrics.port }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+      {{- include "ferrotunnel.servicePortFields" .Values.service.metrics | nindent 6 }}
+  selector:
+    {{- include "ferrotunnel.selectorLabels" . | nindent 4 }}
+{{- end }}
