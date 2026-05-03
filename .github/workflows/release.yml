@@ -27,6 +27,27 @@ jobs:
         with:
           version: v3.14.0
 
+      - name: Ensure gh-pages branch exists
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+            exit 0
+          fi
+
+          worktree="$(mktemp -d)"
+          git worktree add --detach "$worktree"
+          (
+            cd "$worktree"
+            git checkout --orphan gh-pages
+            git rm -rf . >/dev/null 2>&1 || true
+            touch .nojekyll
+            git add .nojekyll
+            git commit -m "chore: initialize gh-pages"
+            git push origin gh-pages
+          )
+          git worktree remove "$worktree"
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         with:
