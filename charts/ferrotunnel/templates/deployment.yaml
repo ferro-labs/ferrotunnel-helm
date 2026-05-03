@@ -1,0 +1,169 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ferrotunnel.fullname" . }}
+  labels:
+    {{- include "ferrotunnel.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- with .Values.deploymentStrategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ferrotunnel.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- if or .Values.commonAnnotations (not .Values.auth.existingSecret) .Values.podAnnotations }}
+      annotations:
+        {{- with .Values.commonAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if not .Values.auth.existingSecret }}
+        checksum/auth-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      labels:
+        {{- include "ferrotunnel.selectorLabels" . | nindent 8 }}
+        {{- with omit .Values.commonLabels "helm.sh/chart" "app.kubernetes.io/name" "app.kubernetes.io/instance" "app.kubernetes.io/version" "app.kubernetes.io/managed-by" "app.kubernetes.io/component" }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "ferrotunnel.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.runtimeClassName }}
+      runtimeClassName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.schedulerName }}
+      schedulerName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: ferrotunnel
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - server
+          ports:
+            - name: control
+              containerPort: {{ .Values.service.control.port }}
+              protocol: TCP
+            - name: http
+              containerPort: {{ .Values.service.http.port }}
+              protocol: TCP
+            {{- if .Values.server.metrics }}
+            - name: metrics
+              containerPort: {{ .Values.service.metrics.port }}
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: FERROTUNNEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ferrotunnel.tokenSecretName" . }}
+                  key: {{ .Values.auth.tokenKey | quote }}
+            - name: FERROTUNNEL_BIND
+              value: "0.0.0.0:{{ .Values.service.control.port }}"
+            - name: FERROTUNNEL_HTTP_BIND
+              value: "0.0.0.0:{{ .Values.service.http.port }}"
+            {{- if .Values.server.metrics }}
+            - name: FERROTUNNEL_METRICS_BIND
+              value: "0.0.0.0:{{ .Values.service.metrics.port }}"
+            {{- end }}
+            - name: FERROTUNNEL_METRICS
+              value: {{ .Values.server.metrics | quote }}
+            - name: FERROTUNNEL_OBSERVABILITY
+              value: {{ .Values.server.observability | quote }}
+            - name: RUST_LOG
+              value: {{ .Values.server.logLevel | quote }}
+            {{- if .Values.tls.enabled }}
+            - name: FERROTUNNEL_TLS_CERT
+              value: {{ printf "%s/%s" .Values.tls.mountPath .Values.tls.certKey | quote }}
+            - name: FERROTUNNEL_TLS_KEY
+              value: {{ printf "%s/%s" .Values.tls.mountPath .Values.tls.keyKey | quote }}
+            {{- if .Values.tls.clientAuth }}
+            - name: FERROTUNNEL_TLS_CA
+              value: {{ printf "%s/%s" .Values.tls.mountPath .Values.tls.caKey | quote }}
+            - name: FERROTUNNEL_TLS_CLIENT_AUTH
+              value: {{ .Values.tls.clientAuth | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if .Values.tls.enabled }}
+            - name: tls
+              mountPath: {{ .Values.tls.mountPath | quote }}
+              readOnly: true
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- if or .Values.tls.enabled .Values.extraVolumes }}
+      volumes:
+        {{- if .Values.tls.enabled }}
+        - name: tls
+          secret:
+            secretName: {{ include "ferrotunnel.tlsSecretName" . }}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

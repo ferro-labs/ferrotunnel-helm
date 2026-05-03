@@ -1,0 +1,159 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/ferro-labs/ferrotunnel
+  tag: v1.0.8
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+commonLabels: {}
+commonAnnotations: {}
+
+server:
+  logLevel: info
+  metrics: false
+  observability: false
+
+# Prefer auth.existingSecret in production. The secret must contain auth.tokenKey.
+auth:
+  existingSecret: ""
+  tokenKey: token
+  token: ""
+  allowEmptyToken: false
+
+serviceAccount:
+  create: true
+  automount: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+deploymentStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+
+terminationGracePeriodSeconds: 30
+priorityClassName: ""
+runtimeClassName: ""
+schedulerName: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  control:
+    type: ClusterIP
+    port: 7835
+    annotations: {}
+    nodePort: null
+    loadBalancerIP: ""
+    loadBalancerClass: ""
+    externalTrafficPolicy: ""
+    internalTrafficPolicy: ""
+    ipFamilyPolicy: ""
+    ipFamilies: []
+    sessionAffinity: ""
+  http:
+    type: ClusterIP
+    port: 8080
+    annotations: {}
+    nodePort: null
+    loadBalancerIP: ""
+    loadBalancerClass: ""
+    externalTrafficPolicy: ""
+    internalTrafficPolicy: ""
+    ipFamilyPolicy: ""
+    ipFamilies: []
+    sessionAffinity: ""
+  metrics:
+    type: ClusterIP
+    port: 9090
+    annotations: {}
+    nodePort: null
+    loadBalancerIP: ""
+    loadBalancerClass: ""
+    externalTrafficPolicy: ""
+    internalTrafficPolicy: ""
+    ipFamilyPolicy: ""
+    ipFamilies: []
+    sessionAffinity: ""
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ferrotunnel.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+tls:
+  enabled: false
+  existingSecret: ""
+  certKey: tls.crt
+  keyKey: tls.key
+  caKey: ca.crt
+  clientAuth: false
+  mountPath: /etc/ferrotunnel/tls
+
+serviceMonitor:
+  enabled: false
+  labels: {}
+  interval: 30s
+  scrapeTimeout: 10s
+
+networkPolicy:
+  enabled: false
+  # Empty lists allow all sources for that listener. Add NetworkPolicyPeer entries to restrict.
+  controlIngress: []
+  httpIngress: []
+  metricsIngress: []
+  egress: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: null
+  behavior: {}
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  maxUnavailable: null
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+
+extraEnv: []
+extraEnvFrom: []
+extraVolumes: []
+extraVolumeMounts: []
+
+# Reserved for future QUIC/HTTP3 feature-gated server options.
+experimental: {}

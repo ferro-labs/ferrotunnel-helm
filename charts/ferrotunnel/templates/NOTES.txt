@@ -1,0 +1,13 @@
+FerroTunnel server has been installed.
+
+Control service:
+  {{ include "ferrotunnel.fullname" . }}-control:{{ .Values.service.control.port }}
+HTTP health endpoint:
+  http://{{ include "ferrotunnel.fullname" . }}-http:{{ .Values.service.http.port }}/health
+{{- if .Values.server.metrics }}
+Metrics endpoint:
+  http://{{ include "ferrotunnel.fullname" . }}-metrics:{{ .Values.service.metrics.port }}/metrics
+{{- end }}
+
+Run the Helm test:
+  helm test {{ .Release.Name }}

@@ -1,0 +1,49 @@
+{{- if .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ferrotunnel.fullname" . }}
+  labels:
+    {{- include "ferrotunnel.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "ferrotunnel.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    {{- if .Values.networkPolicy.egress }}
+    - Egress
+    {{- end }}
+  ingress:
+    - {{- if .Values.networkPolicy.controlIngress }}
+      from:
+        {{- toYaml .Values.networkPolicy.controlIngress | nindent 8 }}
+      {{- end }}
+      ports:
+        - protocol: TCP
+          port: control
+    - {{- if .Values.networkPolicy.httpIngress }}
+      from:
+        {{- toYaml .Values.networkPolicy.httpIngress | nindent 8 }}
+      {{- end }}
+      ports:
+        - protocol: TCP
+          port: http
+    {{- if .Values.server.metrics }}
+    - {{- if .Values.networkPolicy.metricsIngress }}
+      from:
+        {{- toYaml .Values.networkPolicy.metricsIngress | nindent 8 }}
+      {{- end }}
+      ports:
+        - protocol: TCP
+          port: metrics
+    {{- end }}
+  {{- with .Values.networkPolicy.egress }}
+  egress:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

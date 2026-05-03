@@ -1,0 +1,3 @@
+# Minimal values used by chart-testing.
+auth:
+  token: chart-testing-token
