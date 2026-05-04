@@ -1,6 +1,6 @@
 # FerroTunnel Helm Charts
 
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/ferro-labs)](https://artifacthub.io/packages/helm/ferro-labs/ferrotunnel)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/ferro-labs-tunnel)](https://artifacthub.io/packages/helm/ferro-labs-tunnel/ferrotunnel)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 
 Official Helm chart repository for running the [FerroTunnel](https://github.com/ferro-labs/ferrotunnel) server on Kubernetes.

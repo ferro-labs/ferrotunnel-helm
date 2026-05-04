@@ -24,4 +24,4 @@ annotations:
     - name: Source
       url: https://github.com/ferro-labs/ferrotunnel
     - name: Artifact Hub
-      url: https://artifacthub.io/packages/helm/ferro-labs/ferrotunnel
+      url: https://artifacthub.io/packages/helm/ferro-labs-tunnel/ferrotunnel
